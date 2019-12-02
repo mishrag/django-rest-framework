@@ -53,7 +53,7 @@ from rest_framework.fields import (  # NOQA # isort:skip
     BooleanField, CharField, ChoiceField, DateField, DateTimeField, DecimalField,
     DictField, DurationField, EmailField, Field, FileField, FilePathField, FloatField,
     HiddenField, HStoreField, IPAddressField, ImageField, IntegerField, JSONField,
-    ListField, ModelField, MultipleChoiceField, NullBooleanField, ReadOnlyField,
+    ListField, ModelField, MultipleChoiceField, NullBooleanField, ReadOnlyField, ObjectIdField,
     RegexField, SerializerMethodField, SlugField, TimeField, URLField, UUIDField,
 )
 from rest_framework.relations import (  # NOQA # isort:skip
@@ -864,7 +864,7 @@ class ModelSerializer(Serializer):
     the serializer class, or simply use a `Serializer` class.
     """
     serializer_field_mapping = {
-        models.AutoField: IntegerField,
+        models.AutoField: ObjectIdField,
         models.BigIntegerField: IntegerField,
         models.BooleanField: BooleanField,
         models.CharField: CharField,

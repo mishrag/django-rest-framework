@@ -1790,6 +1790,24 @@ class JSONField(Field):
 
 # Miscellaneous field types...
 
+
+class ObjectIdField(Field):
+    default_error_messages = {
+        'invalid': _('A valid object ID should be 12 bytes or a 24 character hex.'),
+    }
+
+    def to_internal_value(self, data):
+        import bson
+        if not bson.objectid.ObjectId.is_valid(data):
+            self.fail('invalid')
+        return data
+
+    def to_representation(self, value):
+        from bson.objectid import ObjectId
+        return ObjectId(value)
+
+
+
 class ReadOnlyField(Field):
     """
     A read-only field that simply returns the field value.
