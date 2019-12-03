@@ -6,6 +6,7 @@ import decimal
 import json  # noqa
 import uuid
 
+from bson import ObjectId
 from django.db.models.query import QuerySet
 from django.utils import timezone
 from django.utils.encoding import force_str
@@ -42,6 +43,8 @@ class JSONEncoder(json.JSONEncoder):
             # Serializers will coerce decimals to strings by default.
             return float(obj)
         elif isinstance(obj, uuid.UUID):
+            return str(obj)
+        elif isinstance(obj, ObjectId):
             return str(obj)
         elif isinstance(obj, QuerySet):
             return tuple(obj)
