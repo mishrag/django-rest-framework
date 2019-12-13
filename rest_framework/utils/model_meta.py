@@ -47,6 +47,9 @@ def get_field_info(model):
 
 def _get_pk(opts):
     pk = opts.pk
+    if not pk:
+        # Handle embedded documents
+        return None
     rel = pk.remote_field
 
     while rel and rel.parent_link:
@@ -140,8 +143,9 @@ def _get_reverse_relationships(opts):
 
 def _merge_fields_and_pk(pk, fields):
     fields_and_pk = OrderedDict()
-    fields_and_pk['pk'] = pk
-    fields_and_pk[pk.name] = pk
+    if pk:
+        fields_and_pk['pk'] = pk
+        fields_and_pk[pk.name] = pk
     fields_and_pk.update(fields)
 
     return fields_and_pk

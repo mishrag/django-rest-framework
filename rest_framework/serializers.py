@@ -1016,7 +1016,8 @@ class ModelSerializer(Serializer):
                 serializer_class=self.__class__.__name__
             )
         )
-        if model_meta.is_abstract_model(self.Meta.model):
+        from core.models.base import EmbeddedModel
+        if model_meta.is_abstract_model(self.Meta.model) and not issubclass(self.Meta.model, EmbeddedModel):
             raise ValueError(
                 'Cannot use ModelSerializer with Abstract Models.'
             )
@@ -1172,7 +1173,7 @@ class ModelSerializer(Serializer):
         `Meta.fields` option is not specified.
         """
         return (
-            [model_info.pk.name] +
+            [model_info.pk.name] if model_info.pk else [] +
             list(declared_fields) +
             list(model_info.fields) +
             list(model_info.forward_relations)
