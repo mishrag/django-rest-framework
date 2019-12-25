@@ -1173,7 +1173,7 @@ class ModelSerializer(Serializer):
         `Meta.fields` option is not specified.
         """
         return (
-            [model_info.pk.name] if model_info.pk else [] +
+            ([model_info.pk.name] if model_info.pk else []) +
             list(declared_fields) +
             list(model_info.fields) +
             list(model_info.forward_relations)
