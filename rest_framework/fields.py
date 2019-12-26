@@ -8,6 +8,8 @@ import uuid
 from collections import OrderedDict
 from collections.abc import Mapping
 
+from core.permissions.base import AccessType
+from utils.caches import request_cache
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -305,11 +307,13 @@ class Field:
     default_validators = []
     default_empty_html = empty
     initial = None
+    permissions = None
 
     def __init__(self, read_only=False, write_only=False,
                  required=None, default=empty, initial=empty, source=None,
                  label=None, help_text=None, style=None,
-                 error_messages=None, validators=None, allow_null=False):
+                 error_messages=None, validators=None, allow_null=False,
+                 permissions=None):
         self._creation_counter = Field._creation_counter
         Field._creation_counter += 1
 
@@ -352,6 +356,8 @@ class Field:
         messages.update(error_messages or {})
         self.error_messages = messages
 
+        self.permissions = permissions
+
     def bind(self, field_name, parent):
         """
         Initializes the field name and parent for the field instance.
@@ -385,6 +391,15 @@ class Field:
             self.source_attrs = []
         else:
             self.source_attrs = self.source.split('.')
+
+    @request_cache
+    def is_accessible(self, access_type):
+        if not self.permissions:
+            if self.parent is None:
+                return True
+            return self.parent.is_accessible(access_type)
+
+        return self.permissions.has_access(self.context, access_type)
 
     # .validators is a lazily loaded property, that gets its default
     # value from `get_validators`.
@@ -508,6 +523,8 @@ class Field:
             return (True, self.get_default())
 
         if data is empty:
+            if not self.is_accessible(AccessType.MODIFY):
+                raise SkipField()
             if getattr(self.root, 'partial', False):
                 raise SkipField()
             if self.required:

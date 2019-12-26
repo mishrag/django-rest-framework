@@ -16,6 +16,8 @@ import traceback
 from collections import OrderedDict
 from collections.abc import Mapping
 
+from core.permissions.base import AccessType
+from utils.caches import request_cache
 from django.core.exceptions import FieldDoesNotExist, ImproperlyConfigured
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models
@@ -26,7 +28,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework.compat import postgres_fields
-from rest_framework.exceptions import ErrorDetail, ValidationError
+from rest_framework.exceptions import ErrorDetail, ValidationError, PermissionDenied
 from rest_framework.fields import get_error_detail, set_value
 from rest_framework.settings import api_settings
 from rest_framework.utils import html, model_meta, representation
@@ -477,6 +479,7 @@ class Serializer(BaseSerializer, metaclass=SerializerMetaclass):
 
         ret = OrderedDict()
         errors = OrderedDict()
+        permission_errors = OrderedDict()
         fields = self._writable_fields
 
         for field in fields:
@@ -493,10 +496,15 @@ class Serializer(BaseSerializer, metaclass=SerializerMetaclass):
             except SkipField:
                 pass
             else:
+                if not field.is_accessible(AccessType.MODIFY):
+                    permission_errors[field.field_name] = 'Write access denied'
+                    continue
                 set_value(ret, field.source_attrs, validated_value)
 
         if errors:
             raise ValidationError(errors)
+        elif permission_errors:
+            raise PermissionDenied(permission_errors)
 
         return ret
 
@@ -509,6 +517,8 @@ class Serializer(BaseSerializer, metaclass=SerializerMetaclass):
 
         for field in fields:
             try:
+                if not field.is_accessible(AccessType.VIEW):
+                    continue
                 attribute = field.get_attribute(instance)
             except SkipField:
                 continue
@@ -1230,7 +1240,7 @@ class ModelSerializer(Serializer):
                 'required', 'default', 'initial', 'source',
                 'label', 'help_text', 'style',
                 'error_messages', 'validators', 'allow_null', 'allow_blank',
-                'choices'
+                'choices', 'permissions',
             }
             for key in list(field_kwargs):
                 if key not in valid_kwargs:
@@ -1580,6 +1590,14 @@ class ModelSerializer(Serializer):
                 validators.append(validator)
 
         return validators
+
+    @request_cache
+    def is_accessible(self, access_type):
+        permissions = getattr(self.Meta.model._meta, 'permissions', None)
+        if not permissions:
+            return True
+
+        return permissions.has_access(self.context, access_type)
 
 
 if hasattr(models, 'UUIDField'):

@@ -230,6 +230,8 @@ def get_field_kwargs(field_name, model_field):
     if validator_kwarg:
         kwargs['validators'] = validator_kwarg
 
+    kwargs['permissions'] = model_field.permissions
+
     return kwargs
 
 
