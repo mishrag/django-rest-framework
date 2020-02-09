@@ -286,6 +286,8 @@ def get_relation_kwargs(field_name, relation_info):
             kwargs['validators'] = kwargs.get('validators', []) + [validator]
         if to_many and not model_field.blank:
             kwargs['allow_empty'] = False
+        if model_field.permissions:
+            kwargs['permissions'] = model_field.permissions
 
     return kwargs
 
