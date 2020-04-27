@@ -20,7 +20,7 @@ from core.permissions.base import AccessType
 from utils.caches import request_cache
 from django.core.exceptions import FieldDoesNotExist, ImproperlyConfigured
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import models
+from djongo import models
 from django.db.models import DurationField as ModelDurationField
 from django.db.models.fields import Field as DjangoModelField
 from django.utils import timezone
@@ -898,6 +898,7 @@ class ModelSerializer(Serializer):
         models.URLField: URLField,
         models.GenericIPAddressField: IPAddressField,
         models.FilePathField: FilePathField,
+        models.JSONField: JSONField,
     }
     if ModelDurationField is not None:
         serializer_field_mapping[ModelDurationField] = DurationField
